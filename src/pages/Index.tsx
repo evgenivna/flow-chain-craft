@@ -1,14 +1,36 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from 'react';
+import Onboarding from '@/components/Onboarding';
+import FlowCanvas from '@/components/FlowCanvas';
+import { getSetting, initDB } from '@/lib/storage';
 
-const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+export default function Index() {
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      await initDB();
+      const apiKey = await getSetting('openai_api_key');
+      setHasCompletedOnboarding(!!apiKey);
+      setIsLoading(false);
+    };
+    checkOnboarding();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-accent animate-float glow-accent" />
+          <p className="text-muted-foreground">Loading FlowPilot...</p>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
 
-export default Index;
+  if (!hasCompletedOnboarding) {
+    return <Onboarding onComplete={() => setHasCompletedOnboarding(true)} />;
+  }
+
+  return <FlowCanvas />;
+}
