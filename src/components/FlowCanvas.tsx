@@ -1,30 +1,29 @@
-import { useCallback, useState, useEffect } from 'react';
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  addEdge,
-  useNodesState,
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls, 
+  useNodesState, 
   useEdgesState,
+  addEdge,
   Connection,
   Edge,
   Node,
   Panel,
   useReactFlow,
+  BackgroundVariant
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Plus, Play, Square, Save, Download, Settings as SettingsIcon, Maximize2, AlignCenter } from 'lucide-react';
-import InputNode from './nodes/InputNode';
-import PromptNode from './nodes/PromptNode';
-import EndNode from './nodes/EndNode';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Plus, Download, Settings as SettingsIcon, Zap } from 'lucide-react';
+import InputNode from '@/components/nodes/InputNode';
+import PromptNode from '@/components/nodes/PromptNode';
+import EndNode from '@/components/nodes/EndNode';
+import NodeInspector from '@/components/NodeInspector';
+import Settings from '@/components/Settings';
+import { saveFlow, getSetting } from '@/lib/storage';
 import { useToast } from '@/hooks/use-toast';
-import NodeInspector from './NodeInspector';
-import Settings from './Settings';
 import { executeFlow } from '@/lib/execution';
-import { getSetting, saveFlow, getFlow } from '@/lib/storage';
-import { PromptNodeData } from '@/types/flow';
+import '@xyflow/react/dist/style.css';
 
 const nodeTypes = {
   input: InputNode,
@@ -32,176 +31,165 @@ const nodeTypes = {
   end: EndNode,
 };
 
-const FLOW_ID = 'main-flow';
-
-const initialNodes: Node[] = [];
-const initialEdges: Edge[] = [];
+const defaultViewport = { x: 50, y: 50, zoom: 0.8 };
 
 export default function FlowCanvas() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [isRunning, setIsRunning] = useState(false);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [tokenCount, setTokenCount] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showFabMenu, setShowFabMenu] = useState(false);
+  const { fitView } = useReactFlow();
   const { toast } = useToast();
-  const reactFlowInstance = useReactFlow();
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+  const startTimeRef = useRef<number>(0);
 
   // Load saved flow on mount
   useEffect(() => {
     const loadFlow = async () => {
-      const saved = await getFlow(FLOW_ID);
+      const saved = localStorage.getItem('current-flow');
       if (saved) {
-        setNodes(saved.nodes);
-        setEdges(saved.edges);
+        try {
+          const { nodes: savedNodes, edges: savedEdges } = JSON.parse(saved);
+          setNodes(savedNodes || []);
+          setEdges(savedEdges || []);
+          setTimeout(() => fitView({ padding: 0.2 }), 100);
+        } catch (e) {
+          console.error('Failed to load flow:', e);
+        }
       }
     };
     loadFlow();
-  }, [setNodes, setEdges]);
-
-  // Handle virtual keyboard on mobile
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'visualViewport' in window && window.visualViewport) {
-      const handleResize = () => {
-        if (window.visualViewport) {
-          document.body.style.height = `${window.visualViewport.height}px`;
-        }
-      };
-      window.visualViewport.addEventListener('resize', handleResize);
-      return () => {
-        window.visualViewport?.removeEventListener('resize', handleResize);
-        document.body.style.height = '';
-      };
-    }
   }, []);
 
-  // Auto-save flow on changes
+  // Mobile viewport handling
   useEffect(() => {
-    if (nodes.length > 0) {
-      const timer = setTimeout(() => {
-        saveFlow({ id: FLOW_ID, name: 'Main Flow', nodes, edges });
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    const handleResize = () => {
+      if (window.visualViewport) {
+        document.body.style.height = `${window.visualViewport.height}px`;
+      }
+    };
+    
+    window.visualViewport?.addEventListener('resize', handleResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Auto-save flow
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (nodes.length > 0 || edges.length > 0) {
+        localStorage.setItem('current-flow', JSON.stringify({ nodes, edges }));
+        saveFlow({
+          id: 'current',
+          name: 'Current Flow',
+          nodes,
+          edges,
+        });
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [nodes, edges]);
 
-  const onConnect = useCallback(
-    (params: Connection | Edge) => {
-      setEdges((eds) => addEdge(params, eds));
-      toast({
-        title: 'Nodes Connected',
-        description: 'Connection created successfully',
-      });
-    },
-    [setEdges, toast]
-  );
-
-  const handleZoomToFit = useCallback(() => {
-    reactFlowInstance?.fitView({ padding: 0.2, duration: 400 });
+  // Connection handler
+  const onConnect = useCallback((connection: Connection) => {
+    setEdges((eds) => addEdge({ ...connection, animated: true, style: { stroke: 'hsl(var(--primary))' } }, eds));
     toast({
-      title: 'Zoom to Fit',
-      description: 'Canvas adjusted to fit all nodes',
+      title: '✨ Connected',
+      description: 'Nodes linked successfully',
+      duration: 2000,
     });
-  }, [reactFlowInstance, toast]);
+  }, [setEdges, toast]);
 
-  const handleAutoAlign = useCallback(() => {
-    // Simple auto-align: arrange nodes in a grid
-    const nodesCopy = [...nodes];
-    nodesCopy.forEach((node, i) => {
-      node.position = {
-        x: (i % 3) * 350 + 100,
-        y: Math.floor(i / 3) * 250 + 100,
-      };
-    });
-    setNodes(nodesCopy);
-    toast({
-      title: 'Auto-Aligned',
-      description: 'Nodes arranged in a grid',
-    });
-  }, [nodes, setNodes, toast]);
-
-  const addNode = (type: 'input' | 'prompt' | 'end') => {
-    const id = `${type}-${Date.now()}`;
-    let data: any = {};
-    
-    if (type === 'input') {
-      data = { label: 'Input', value: '', type: 'text' };
-    } else if (type === 'prompt') {
-      data = {
-        label: 'ChatGPT',
-        systemPrompt: 'You are a helpful assistant.',
-        userPrompt: '',
-        model: 'gpt-4o-mini',
-        temperature: 0.7,
-        maxTokens: 2000,
-        jsonMode: false,
-      };
-    } else if (type === 'end') {
-      data = { label: 'Final Output', displayMode: 'text' };
-    }
-    
-    const newNode: Node = {
-      id,
-      type,
-      position: { x: Math.random() * 400 + 100, y: Math.random() * 400 + 100 },
-      data,
-    };
-    setNodes((nds) => [...nds, newNode]);
-    toast({
-      title: 'Node Added',
-      description: `${type.charAt(0).toUpperCase() + type.slice(1)} node created`,
-    });
-  };
-
-  const onNodeClick = useCallback((_: any, node: Node) => {
+  // Node click handler
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
-    setIsInspectorOpen(true);
+    setShowFabMenu(false);
   }, []);
 
-  const handleNodeUpdate = useCallback((nodeId: string, data: any) => {
+  // Add node functions
+  const addNode = useCallback((type: 'input' | 'prompt' | 'end') => {
+    const newNode: Node = {
+      id: `${type}-${Date.now()}`,
+      type,
+      position: { 
+        x: Math.random() * 300 + 100, 
+        y: Math.random() * 200 + 100 
+      },
+      data: type === 'input' 
+        ? { label: 'Input', value: '', type: 'text' }
+        : type === 'prompt'
+        ? { 
+            label: 'Prompt', 
+            systemPrompt: 'You are a helpful assistant.', 
+            userPrompt: 'Hello!', 
+            model: 'gpt-4o-mini',
+            temperature: 0.7,
+            maxTokens: 2000,
+            jsonMode: false,
+          }
+        : { label: 'End', displayMode: 'text' },
+    };
+    setNodes((nds) => [...nds, newNode]);
+    setShowFabMenu(false);
+    setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 100);
+    
+    toast({
+      title: '🎉 Node Added',
+      description: `${type} node created`,
+      duration: 2000,
+    });
+  }, [setNodes, fitView, toast]);
+
+  // Update node handler
+  const handleNodeUpdate = useCallback((nodeId: string, newData: any) => {
     setNodes((nds) =>
-      nds.map((node) => (node.id === nodeId ? { ...node, data } : node))
+      nds.map((node) =>
+        node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
+      )
     );
   }, [setNodes]);
 
+  // Run flow
   const runFlow = async () => {
+    const apiKey = await getSetting('openai_api_key');
+    if (!apiKey) {
+      toast({
+        title: '⚠️ API Key Missing',
+        description: 'Please add your ChatGPT API key in Settings',
+        variant: 'destructive',
+      });
+      setShowSettings(true);
+      return;
+    }
+
     if (nodes.length === 0) {
       toast({
-        title: 'No Flow to Run',
+        title: '📭 Empty Canvas',
         description: 'Add some nodes first!',
         variant: 'destructive',
       });
       return;
     }
 
-    const apiKey = await getSetting('openai_api_key');
-    if (!apiKey) {
-      toast({
-        title: 'API Key Missing',
-        description: 'Please configure your ChatGPT API key in settings.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsRunning(true);
+    setIsExecuting(true);
     setTokenCount(0);
-    const startTime = Date.now();
-    
-    // Reset all node outputs
+    setDuration(0);
+    startTimeRef.current = Date.now();
+
+    // Reset all nodes
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
-        data: { ...node.data, output: undefined, error: undefined, isRunning: false }
+        data: {
+          ...node.data,
+          output: undefined,
+          error: undefined,
+          isRunning: false,
+        },
       }))
     );
-
-    toast({
-      title: '▶ Flow Started',
-      description: 'Executing your prompt chain...',
-    });
 
     try {
       await executeFlow(
@@ -210,230 +198,240 @@ export default function FlowCanvas() {
         apiKey,
         (nodeId) => {
           setNodes((nds) =>
-            nds.map((node) =>
-              node.id === nodeId
-                ? { ...node, data: { ...node.data, isRunning: true, output: '', error: undefined } }
-                : node
+            nds.map((n) =>
+              n.id === nodeId ? { ...n, data: { ...n.data, isRunning: true, error: undefined } } : n
             )
           );
         },
         (nodeId, token) => {
-          setTokenCount((c) => c + 1);
+          setTokenCount((prev) => prev + 1);
           setNodes((nds) =>
-            nds.map((node) =>
-              node.id === nodeId
-                ? { ...node, data: { ...node.data, output: (node.data.output || '') + token } }
-                : node
+            nds.map((n) =>
+              n.id === nodeId
+                ? { ...n, data: { ...n.data, output: (n.data.output || '') + token } }
+                : n
             )
           );
         },
         (nodeId, output) => {
           setNodes((nds) =>
-            nds.map((node) =>
-              node.id === nodeId
-                ? { ...node, data: { ...node.data, output, isRunning: false } }
-                : node
+            nds.map((n) =>
+              n.id === nodeId
+                ? { ...n, data: { ...n.data, output, isRunning: false } }
+                : n
             )
           );
         },
         (nodeId, error) => {
           setNodes((nds) =>
-            nds.map((node) =>
-              node.id === nodeId
-                ? { ...node, data: { ...node.data, error, isRunning: false } }
-                : node
+            nds.map((n) =>
+              n.id === nodeId
+                ? { ...n, data: { ...n.data, error, isRunning: false } }
+                : n
             )
           );
         }
       );
 
-      const endTime = Date.now();
-      setDuration((endTime - startTime) / 1000);
+      const elapsed = ((Date.now() - startTimeRef.current) / 1000).toFixed(1);
+      setDuration(parseFloat(elapsed));
+
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
 
       toast({
-        title: '✅ Flow Completed',
-        description: `Processed ${tokenCount} tokens in ${((endTime - startTime) / 1000).toFixed(1)}s`,
+        title: '✅ Flow Complete',
+        description: `Generated ${tokenCount} tokens in ${elapsed}s`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: '❌ Flow Failed',
-        description: error instanceof Error ? error.message : 'Unknown error',
+        title: '❌ Execution Failed',
+        description: error.message,
         variant: 'destructive',
       });
     } finally {
-      setIsRunning(false);
+      setIsExecuting(false);
     }
   };
 
+  // Export flow
   const exportFlow = () => {
     const data = JSON.stringify({ nodes, edges }, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'flow.json';
+    a.download = `flow-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    
     toast({
-      title: 'Flow Exported',
-      description: 'Downloaded as flow.json',
+      title: '📥 Flow Exported',
+      description: 'Your flow has been downloaded',
+      duration: 2000,
     });
   };
 
   return (
-    <>
-      <div className="h-screen w-full relative">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          nodeTypes={nodeTypes}
-          fitView
-          className="bg-gradient-to-br from-background via-background/95 to-background/90"
-          connectOnClick={true}
-          panOnDrag={[1, 2]}
-          selectionOnDrag={false}
-          zoomOnPinch
-          zoomActivationKeyCode={null}
-          panActivationKeyCode={null}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        >
-        <Background gap={20} size={1} color="hsl(var(--border))" />
-        <Controls className="glass rounded-2xl border-primary/30" />
+    <div className="w-full h-screen relative">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        nodeTypes={nodeTypes}
+        defaultViewport={defaultViewport}
+        panOnDrag={[1, 2]}
+        zoomOnPinch
+        zoomOnScroll
+        minZoom={0.3}
+        maxZoom={1.5}
+        fitView
+        className="bg-gradient-to-br from-background via-background to-card"
+      >
+        <Background 
+          variant={BackgroundVariant.Dots} 
+          gap={20} 
+          size={1.5}
+          color="hsl(var(--primary) / 0.15)"
+        />
+        <Controls 
+          className="!bg-card/80 !backdrop-blur-lg !border-border/50 !rounded-2xl"
+          showInteractive={false}
+        />
 
-          {/* Top Toolbar */}
-          <Panel position="top-center" className="flex gap-2">
+        {/* Stats Panel */}
+        {isExecuting && (
+          <Panel position="top-center">
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="glass-card flex items-center gap-2"
+              className="glass glass-card px-6 py-3 flex items-center gap-4"
             >
-              <Button
-                onClick={() => addNode('input')}
-                size="sm"
-                variant="outline"
-                className="border-primary/30 hover:bg-primary/10"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Input
-              </Button>
-              <Button
-                onClick={() => addNode('prompt')}
-                size="sm"
-                variant="outline"
-                className="border-primary/30 hover:bg-primary/10"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Prompt
-              </Button>
-              <Button
-                onClick={() => addNode('end')}
-                size="sm"
-                variant="outline"
-                className="border-accent/30 hover:bg-accent/10"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                End
-              </Button>
-            </motion.div>
-          </Panel>
-
-          {/* Top Right Controls */}
-          <Panel position="top-right" className="flex flex-col gap-2">
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="flex flex-col gap-2"
-            >
-              <Button
-                onClick={handleZoomToFit}
-                size="sm"
-                variant="outline"
-                className="border-primary/30 hover:bg-primary/10"
-                title="Zoom to Fit"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={handleAutoAlign}
-                size="sm"
-                variant="outline"
-                className="border-primary/30 hover:bg-primary/10"
-                title="Auto-Align Nodes"
-              >
-                <AlignCenter className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={() => setShowSettings(true)}
-                size="sm"
-                variant="outline"
-                className="border-primary/30 hover:bg-primary/10"
-                title="Settings"
-              >
-                <SettingsIcon className="w-4 h-4" />
-              </Button>
-            </motion.div>
-          </Panel>
-
-        {/* Bottom FAB */}
-        <Panel position="bottom-center">
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] flex gap-3 items-center"
-            style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
-          >
-            {isRunning && tokenCount > 0 && (
-              <div className="glass-card px-4 py-2 text-sm">
-                ⚡ {tokenCount} tokens • {duration.toFixed(1)}s
+              <Zap className="w-5 h-5 text-accent animate-pulse" />
+              <div className="text-sm font-semibold text-foreground">
+                {tokenCount} tokens • {((Date.now() - startTimeRef.current) / 1000).toFixed(1)}s
               </div>
-            )}
-            <Button
-              onClick={exportFlow}
-              variant="outline"
-              size="lg"
-              className="border-primary/30 hover:bg-primary/10 px-6 py-6 rounded-2xl"
-            >
-              <Download className="w-5 h-5" />
-            </Button>
-            <Button
-              onClick={runFlow}
-              disabled={isRunning}
-              size="lg"
-              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold px-8 py-6 rounded-2xl shadow-lg glow-accent"
-            >
-              {isRunning ? (
-                <>
-                  <Square className="w-5 h-5 mr-2" />
-                  Running...
-                </>
-              ) : (
-                <>
-                  <Play className="w-5 h-5 mr-2" />
-                  Run Flow
-                </>
-              )}
-            </Button>
-          </motion.div>
+            </motion.div>
+          </Panel>
+        )}
+
+        {/* Top Toolbar */}
+        <Panel position="top-right">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowSettings(true)}
+            className="glass glass-card p-3 rounded-2xl hover:ring-2 hover:ring-primary/50 transition-all"
+          >
+            <SettingsIcon className="w-5 h-5 text-foreground" />
+          </motion.button>
         </Panel>
       </ReactFlow>
+
+      {/* FAB Menu */}
+      <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-40">
+        <AnimatePresence>
+          {showFabMenu && (
+            <>
+              <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ delay: 0.1 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => addNode('input')}
+                className="glass glass-card px-4 py-3 rounded-2xl text-sm font-semibold text-foreground flex items-center gap-2 hover:ring-2 hover:ring-primary/50"
+              >
+                🟢 Input
+              </motion.button>
+              <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ delay: 0.05 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => addNode('prompt')}
+                className="glass glass-card px-4 py-3 rounded-2xl text-sm font-semibold text-foreground flex items-center gap-2 hover:ring-2 hover:ring-primary/50"
+              >
+                🧠 Prompt
+              </motion.button>
+              <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => addNode('end')}
+                className="glass glass-card px-4 py-3 rounded-2xl text-sm font-semibold text-foreground flex items-center gap-2 hover:ring-2 hover:ring-accent/50"
+              >
+                🏁 End
+              </motion.button>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Main FAB */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowFabMenu(!showFabMenu)}
+          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-2xl ${
+            showFabMenu 
+              ? 'bg-accent text-white ring-4 ring-accent/30' 
+              : 'bg-gradient-to-br from-primary to-accent text-white'
+          }`}
+        >
+          <motion.div animate={{ rotate: showFabMenu ? 45 : 0 }} transition={{ duration: 0.2 }}>
+            <Plus className="w-8 h-8" />
+          </motion.div>
+        </motion.button>
+      </div>
+
+      {/* Run FAB */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={runFlow}
+        disabled={isExecuting || nodes.length === 0}
+        className="fixed bottom-6 left-6 w-16 h-16 rounded-full bg-gradient-to-br from-accent to-primary text-white flex items-center justify-center shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed z-40"
+      >
+        {isExecuting ? (
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+            <Zap className="w-7 h-7" />
+          </motion.div>
+        ) : (
+          <Play className="w-7 h-7 ml-1" />
+        )}
+      </motion.button>
+
+      {/* Export FAB */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={exportFlow}
+        className="fixed bottom-24 left-6 w-12 h-12 rounded-full glass glass-card text-foreground flex items-center justify-center shadow-lg z-40"
+      >
+        <Download className="w-5 h-5" />
+      </motion.button>
+
+      {/* Node Inspector */}
+      {selectedNode && (
+        <NodeInspector
+          node={selectedNode}
+          onClose={() => setSelectedNode(null)}
+          onUpdate={handleNodeUpdate}
+        />
+      )}
+
+      {/* Settings */}
+      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
     </div>
-    
-    {isInspectorOpen && (
-      <NodeInspector
-        node={selectedNode}
-        onClose={() => {
-          setSelectedNode(null);
-          setIsInspectorOpen(false);
-        }}
-        onUpdate={handleNodeUpdate}
-      />
-    )}
-    
-    {showSettings && <Settings onClose={() => setShowSettings(false)} />}
-  </>
   );
 }
