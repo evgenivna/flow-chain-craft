@@ -133,4 +133,22 @@ All colors MUST be HSL.
   .animate-token {
     animation: token-fade 2s ease-in-out infinite;
   }
+
+  /* React Flow node cleanup - remove default white backgrounds */
+  .react-flow__node,
+  .react-flow__node-default,
+  .react-flow__node-input,
+  .react-flow__node-output {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Keyboard handling for mobile */
+  @supports (height: 100dvh) {
+    .react-flow__viewport {
+      height: 100dvh;
+    }
+  }
 }

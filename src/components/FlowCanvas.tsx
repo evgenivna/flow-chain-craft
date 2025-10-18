@@ -61,6 +61,22 @@ export default function FlowCanvas() {
     loadFlow();
   }, [setNodes, setEdges]);
 
+  // Handle virtual keyboard on mobile
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'visualViewport' in window && window.visualViewport) {
+      const handleResize = () => {
+        if (window.visualViewport) {
+          document.body.style.height = `${window.visualViewport.height}px`;
+        }
+      };
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => {
+        window.visualViewport?.removeEventListener('resize', handleResize);
+        document.body.style.height = '';
+      };
+    }
+  }, []);
+
   // Auto-save flow on changes
   useEffect(() => {
     if (nodes.length > 0) {
@@ -279,6 +295,10 @@ export default function FlowCanvas() {
           connectOnClick={true}
           panOnDrag={[1, 2]}
           selectionOnDrag={false}
+          zoomOnPinch
+          zoomActivationKeyCode={null}
+          panActivationKeyCode={null}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         >
         <Background gap={20} size={1} color="hsl(var(--border))" />
         <Controls className="glass rounded-2xl border-primary/30" />
@@ -366,11 +386,12 @@ export default function FlowCanvas() {
           </Panel>
 
         {/* Bottom FAB */}
-        <Panel position="bottom-center" className="mb-8">
+        <Panel position="bottom-center">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="flex gap-3 items-center"
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] flex gap-3 items-center"
+            style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
           >
             {isRunning && tokenCount > 0 && (
               <div className="glass-card px-4 py-2 text-sm">
