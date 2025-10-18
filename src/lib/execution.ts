@@ -92,6 +92,7 @@ export async function executeFlow(
           ],
           temperature: data.temperature,
           maxTokens: data.maxTokens,
+          jsonMode: data.jsonMode,
           stream: true,
           onToken: (token) => {
             fullOutput += token;

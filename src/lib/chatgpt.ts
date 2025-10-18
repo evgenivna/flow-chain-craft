@@ -16,6 +16,7 @@ export interface ChatCompletionOptions {
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
+  jsonMode?: boolean;
   stream?: boolean;
   onToken?: (token: string) => void;
   onError?: (error: Error) => void;
@@ -42,6 +43,7 @@ export const chatCompletion = async (options: ChatCompletionOptions): Promise<st
     messages,
     temperature = 0.7,
     maxTokens = 2000,
+    jsonMode = false,
     stream = true,
     onToken,
     onError,
@@ -49,19 +51,31 @@ export const chatCompletion = async (options: ChatCompletionOptions): Promise<st
   } = options;
 
   try {
+    const body: any = {
+      model,
+      messages,
+      temperature,
+      stream,
+    };
+
+    // Use max_completion_tokens for GPT-4o and newer models, max_tokens for older ones
+    if (model.includes('gpt-4o') || model.includes('gpt-5') || model.includes('o1')) {
+      body.max_completion_tokens = maxTokens;
+    } else {
+      body.max_tokens = maxTokens;
+    }
+
+    if (jsonMode) {
+      body.response_format = { type: 'json_object' };
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-        stream,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

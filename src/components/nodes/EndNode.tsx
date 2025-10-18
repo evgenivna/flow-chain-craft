@@ -8,7 +8,7 @@ function EndNode({ data, selected }: NodeProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
-      className={`glass-card min-w-[200px] max-w-[300px] ${
+      className={`glass-card min-w-[200px] max-w-[300px] bg-card/50 backdrop-blur-xl ${
         selected ? 'ring-2 ring-accent glow-accent' : ''
       }`}
     >

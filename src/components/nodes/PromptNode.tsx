@@ -11,7 +11,7 @@ function PromptNode({ data, selected }: NodeProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
-      className={`glass-card min-w-[200px] max-w-[300px] relative ${
+      className={`glass-card min-w-[200px] max-w-[300px] relative bg-card/50 backdrop-blur-xl ${
         selected ? 'ring-2 ring-primary glow-primary' : ''
       } ${nodeData.isRunning ? 'ring-2 ring-accent animate-glow-pulse' : ''} ${
         nodeData.error ? 'ring-2 ring-destructive' : ''
