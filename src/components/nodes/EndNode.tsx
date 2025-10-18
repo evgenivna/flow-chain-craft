@@ -3,12 +3,12 @@ import { Handle, Position, NodeProps } from '@xyflow/react';
 import { motion } from 'framer-motion';
 import { EndNodeData } from '@/types/flow';
 
-function EndNode({ data, selected }: NodeProps) {
+function EndNode({ data, selected, id }: NodeProps) {
   const nodeData = data as any as EndNodeData;
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
-      className={`glass-card min-w-[200px] max-w-[300px] bg-card/50 backdrop-blur-xl ${
+      className={`glass-card min-w-[200px] max-w-[300px] ${
         selected ? 'ring-2 ring-accent glow-accent' : ''
       }`}
     >
@@ -25,6 +25,7 @@ function EndNode({ data, selected }: NodeProps) {
           <div className="text-xs text-muted-foreground">{nodeData.displayMode || 'text'} mode</div>
         </div>
       </div>
+      <div className="text-xs text-primary/60 font-mono mb-1">ID: {id}</div>
       
       {nodeData.output && (
         <div className="text-xs text-muted-foreground/70 italic mt-2 line-clamp-3">

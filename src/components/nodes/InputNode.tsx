@@ -3,14 +3,14 @@ import { Handle, Position, NodeProps } from '@xyflow/react';
 import { motion } from 'framer-motion';
 import { InputNodeData } from '@/types/flow';
 
-function InputNode({ data, selected }: NodeProps) {
+function InputNode({ data, selected, id }: NodeProps) {
   const nodeData = data as any as InputNodeData;
   const displayValue = nodeData.value ? (nodeData.value.length > 50 ? nodeData.value.slice(0, 50) + '...' : nodeData.value) : 'Click to edit';
   
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
-      className={`glass-card min-w-[200px] max-w-[300px] bg-card/50 backdrop-blur-xl ${
+      className={`glass-card min-w-[200px] max-w-[300px] ${
         selected ? 'ring-2 ring-primary glow-primary' : ''
       }`}
     >
@@ -21,6 +21,7 @@ function InputNode({ data, selected }: NodeProps) {
           <div className="text-xs text-muted-foreground">{nodeData.type === 'json' ? 'JSON data' : 'Text data'}</div>
         </div>
       </div>
+      <div className="text-xs text-primary/60 font-mono mb-1">ID: {id}</div>
       <div className="text-xs text-muted-foreground/70 italic mt-2 font-mono">
         {displayValue}
       </div>

@@ -11,11 +11,12 @@ import {
   Edge,
   Node,
   Panel,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Plus, Play, Square, Save, Download, Settings as SettingsIcon } from 'lucide-react';
+import { Plus, Play, Square, Save, Download, Settings as SettingsIcon, Maximize2, AlignCenter } from 'lucide-react';
 import InputNode from './nodes/InputNode';
 import PromptNode from './nodes/PromptNode';
 import EndNode from './nodes/EndNode';
@@ -46,6 +47,7 @@ export default function FlowCanvas() {
   const [tokenCount, setTokenCount] = useState(0);
   const [duration, setDuration] = useState(0);
   const { toast } = useToast();
+  const reactFlowInstance = useReactFlow();
 
   // Load saved flow on mount
   useEffect(() => {
@@ -70,9 +72,39 @@ export default function FlowCanvas() {
   }, [nodes, edges]);
 
   const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    (params: Connection | Edge) => {
+      setEdges((eds) => addEdge(params, eds));
+      toast({
+        title: 'Nodes Connected',
+        description: 'Connection created successfully',
+      });
+    },
+    [setEdges, toast]
   );
+
+  const handleZoomToFit = useCallback(() => {
+    reactFlowInstance?.fitView({ padding: 0.2, duration: 400 });
+    toast({
+      title: 'Zoom to Fit',
+      description: 'Canvas adjusted to fit all nodes',
+    });
+  }, [reactFlowInstance, toast]);
+
+  const handleAutoAlign = useCallback(() => {
+    // Simple auto-align: arrange nodes in a grid
+    const nodesCopy = [...nodes];
+    nodesCopy.forEach((node, i) => {
+      node.position = {
+        x: (i % 3) * 350 + 100,
+        y: Math.floor(i / 3) * 250 + 100,
+      };
+    });
+    setNodes(nodesCopy);
+    toast({
+      title: 'Auto-Aligned',
+      description: 'Nodes arranged in a grid',
+    });
+  }, [nodes, setNodes, toast]);
 
   const addNode = (type: 'input' | 'prompt' | 'end') => {
     const id = `${type}-${Date.now()}`;
@@ -244,11 +276,14 @@ export default function FlowCanvas() {
           nodeTypes={nodeTypes}
           fitView
           className="bg-gradient-to-br from-background via-background/95 to-background/90"
+          connectOnClick={true}
+          panOnDrag={[1, 2]}
+          selectionOnDrag={false}
         >
         <Background gap={20} size={1} color="hsl(var(--border))" />
         <Controls className="glass rounded-2xl border-primary/30" />
         <MiniMap
-          className="glass rounded-2xl border-primary/30"
+          className="glass rounded-2xl border-primary/30 !bottom-24 md:!bottom-4"
           nodeColor={(node) => {
             if (node.type === 'input') return 'hsl(var(--node-done))';
             if (node.type === 'prompt') return 'hsl(var(--primary))';
@@ -293,17 +328,37 @@ export default function FlowCanvas() {
             </motion.div>
           </Panel>
 
-          {/* Top Right Settings */}
-          <Panel position="top-right" className="flex gap-2">
+          {/* Top Right Controls */}
+          <Panel position="top-right" className="flex flex-col gap-2">
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
+              className="flex flex-col gap-2"
             >
+              <Button
+                onClick={handleZoomToFit}
+                size="sm"
+                variant="outline"
+                className="border-primary/30 hover:bg-primary/10"
+                title="Zoom to Fit"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleAutoAlign}
+                size="sm"
+                variant="outline"
+                className="border-primary/30 hover:bg-primary/10"
+                title="Auto-Align Nodes"
+              >
+                <AlignCenter className="w-4 h-4" />
+              </Button>
               <Button
                 onClick={() => setShowSettings(true)}
                 size="sm"
                 variant="outline"
                 className="border-primary/30 hover:bg-primary/10"
+                title="Settings"
               >
                 <SettingsIcon className="w-4 h-4" />
               </Button>

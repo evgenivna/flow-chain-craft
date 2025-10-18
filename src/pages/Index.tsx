@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ReactFlowProvider } from '@xyflow/react';
 import Onboarding from '@/components/Onboarding';
 import FlowCanvas from '@/components/FlowCanvas';
 import { getSetting, initDB } from '@/lib/storage';
@@ -32,5 +33,9 @@ export default function Index() {
     return <Onboarding onComplete={() => setHasCompletedOnboarding(true)} />;
   }
 
-  return <FlowCanvas />;
+  return (
+    <ReactFlowProvider>
+      <FlowCanvas />
+    </ReactFlowProvider>
+  );
 }

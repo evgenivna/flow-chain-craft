@@ -32,7 +32,7 @@ export default function NodeInspector({ node, onClose, onUpdate }: NodeInspector
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4"
+        className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4"
         onClick={onClose}
       >
       <motion.div
@@ -40,7 +40,7 @@ export default function NodeInspector({ node, onClose, onUpdate }: NodeInspector
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="w-full max-w-2xl h-[75vh] md:h-auto md:max-h-[80vh] glass-card overflow-hidden flex flex-col rounded-t-3xl md:rounded-2xl"
+        className="w-full max-w-2xl h-[70vh] md:h-auto md:max-h-[75vh] glass-card overflow-hidden flex flex-col rounded-t-3xl md:rounded-2xl pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}

@@ -40,7 +40,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       // Validate API key
       if (!apiKey.trim().startsWith('sk-')) {
         toast({
-          title: 'Invalid API Key',
+          title: '❌ Invalid API Key',
           description: 'ChatGPT API keys start with "sk-"',
           variant: 'destructive',
         });
@@ -54,7 +54,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       if (!isValid) {
         toast({
           title: '⚠️ Could not verify key',
-          description: 'Check your API key and try again.',
+          description: 'Check your API key and network connection, then try again.',
           variant: 'destructive',
         });
         return;
@@ -63,8 +63,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       // Save encrypted API key
       await saveSetting('openai_api_key', apiKey, true);
       toast({
-        title: '✅ Connected!',
-        description: 'Your API key has been saved securely.',
+        title: '✅ API Key Validated!',
+        description: 'Successfully connected to ChatGPT. Your key has been encrypted and saved securely.',
       });
     }
 
@@ -157,7 +157,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               disabled={isValidating || (step === 1 && !apiKey.trim())}
               className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold py-6 rounded-2xl shadow-lg glow-accent"
             >
-              {isValidating ? 'Validating...' : currentStep.cta}
+              {isValidating ? (
+                <span className="flex items-center gap-2">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                  />
+                  Validating API Key...
+                </span>
+              ) : (
+                currentStep.cta
+              )}
             </Button>
           </div>
         </motion.div>
