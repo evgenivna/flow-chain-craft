@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Sugar-candy glassmorphism palette */
+    /* Brand palette (HSL) */
     --background: 250 60% 12%;
     --foreground: 280 70% 95%;
 
@@ -18,16 +18,16 @@ All colors MUST be HSL.
     --popover: 250 50% 14%;
     --popover-foreground: 280 70% 95%;
 
-    --primary: 280 70% 60%;
+    --primary: 280 80% 60%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 250 60% 25%;
     --secondary-foreground: 280 70% 95%;
 
-    --muted: 250 40% 20%;
+    --muted: 250 20% 60%;
     --muted-foreground: 260 30% 70%;
 
-    --accent: 330 90% 65%;
+    --accent: 320 85% 65%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 60%;
@@ -39,14 +39,11 @@ All colors MUST be HSL.
 
     --radius: 1.5rem;
 
-    /* Gradients */
+    /* Gradients (fully closed declarations) */
     --gradient-primary: linear-gradient(135deg, hsl(270 70% 40%), hsl(280 80% 60%));
     --gradient-accent: linear-gradient(135deg, hsl(330 85% 60%), hsl(310 80% 70%));
     --gradient-canvas: linear-gradient(180deg, hsl(250 60% 12%), hsl(240 70% 20%));
-    --gradient-glass: linear-gradient(135deg, 
-      hsla(260 60% 30% / 0.4), 
-      hsla(280 70% 40% / 0.2)
-    );
+    --gradient-glass: linear-gradient(135deg, hsl(260 30% 20% / 0.55), hsl(260 30% 24% / 0.55));
 
     /* Glows & Shadows */
     --glow-primary: 0 0 40px hsla(280 80% 60% / 0.5);
@@ -96,13 +93,21 @@ All colors MUST be HSL.
   /* Glassmorphism utilities */
   .glass {
     background: var(--gradient-glass);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
-    border: 1px solid hsla(260 60% 50% / 0.3);
-    box-shadow: var(--shadow-glass);
+    border: 1px solid hsl(260 60% 50% / 0.3);
+    box-shadow: 0 6px 30px hsl(260 60% 20% / 0.35);
   }
 
   .glass-card {
-    @apply glass rounded-[1.5rem] p-6;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  
+  /* Defensive: ensure any card pseudo-layers are not white plates */
+  .node-card::before,
+  .node-card::after {
+    background: transparent;
   }
 
   .glow-primary {
