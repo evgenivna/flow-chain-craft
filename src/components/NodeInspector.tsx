@@ -28,21 +28,15 @@ export default function NodeInspector({ node, onClose, onUpdate }: NodeInspector
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4"
-        onClick={onClose}
-      >
-      <motion.div
-        initial={{ y: '100%', opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="w-full max-w-2xl h-[70vh] md:h-auto md:max-h-[75vh] glass-card overflow-hidden flex flex-col rounded-t-3xl md:rounded-2xl pointer-events-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
+        <motion.div
+          initial={{ y: '100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          className="w-full max-w-2xl h-[70vh] md:h-auto md:max-h-[75vh] glass-card overflow-hidden flex flex-col rounded-t-3xl md:rounded-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -60,7 +54,7 @@ export default function NodeInspector({ node, onClose, onUpdate }: NodeInspector
             {node.type === 'end' && <EndNodeEditor data={node.data as any as EndNodeData} onUpdate={handleUpdate} />}
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </AnimatePresence>
   );
 }

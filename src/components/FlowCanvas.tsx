@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   addEdge,
   useNodesState,
   useEdgesState,
@@ -48,6 +47,7 @@ export default function FlowCanvas() {
   const [duration, setDuration] = useState(0);
   const { toast } = useToast();
   const reactFlowInstance = useReactFlow();
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
   // Load saved flow on mount
   useEffect(() => {
@@ -157,6 +157,7 @@ export default function FlowCanvas() {
 
   const onNodeClick = useCallback((_: any, node: Node) => {
     setSelectedNode(node);
+    setIsInspectorOpen(true);
   }, []);
 
   const handleNodeUpdate = useCallback((nodeId: string, data: any) => {
@@ -302,14 +303,6 @@ export default function FlowCanvas() {
         >
         <Background gap={20} size={1} color="hsl(var(--border))" />
         <Controls className="glass rounded-2xl border-primary/30" />
-        <MiniMap
-          className="glass rounded-2xl border-primary/30 !bottom-24 md:!bottom-4"
-          nodeColor={(node) => {
-            if (node.type === 'input') return 'hsl(var(--node-done))';
-            if (node.type === 'prompt') return 'hsl(var(--primary))';
-            return 'hsl(var(--accent))';
-          }}
-        />
 
           {/* Top Toolbar */}
           <Panel position="top-center" className="flex gap-2">
@@ -429,11 +422,16 @@ export default function FlowCanvas() {
       </ReactFlow>
     </div>
     
-    <NodeInspector
-      node={selectedNode}
-      onClose={() => setSelectedNode(null)}
-      onUpdate={handleNodeUpdate}
-    />
+    {isInspectorOpen && (
+      <NodeInspector
+        node={selectedNode}
+        onClose={() => {
+          setSelectedNode(null);
+          setIsInspectorOpen(false);
+        }}
+        onUpdate={handleNodeUpdate}
+      />
+    )}
     
     {showSettings && <Settings onClose={() => setShowSettings(false)} />}
   </>

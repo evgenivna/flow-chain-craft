@@ -138,11 +138,30 @@ All colors MUST be HSL.
   .react-flow__node,
   .react-flow__node-default,
   .react-flow__node-input,
-  .react-flow__node-output {
+  .react-flow__node-output,
+  .react-flow__node-prompt,
+  .react-flow__node-end {
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
     padding: 0 !important;
+  }
+  
+  /* Ensure handles are visible and clickable */
+  .react-flow__handle {
+    width: 12px !important;
+    height: 12px !important;
+    border-width: 2px !important;
+    cursor: crosshair !important;
+    z-index: 10 !important;
+  }
+  
+  .react-flow__handle-connecting {
+    background: hsl(var(--primary)) !important;
+  }
+  
+  .react-flow__handle-valid {
+    background: hsl(var(--primary)) !important;
   }
 
   /* Keyboard handling for mobile */
