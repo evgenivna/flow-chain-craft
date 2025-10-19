@@ -382,14 +382,19 @@ export default function FlowCanvas() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowFabMenu(!showFabMenu)}
-          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-2xl ${
+          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-2xl border-2 ${
             showFabMenu 
-              ? 'bg-accent text-white ring-4 ring-accent/30' 
-              : 'bg-gradient-to-br from-primary to-accent text-white'
+              ? 'bg-accent text-white ring-4 ring-accent/30 border-accent/50' 
+              : 'bg-gradient-to-br from-primary to-accent text-white border-primary/30'
           }`}
+          style={{
+            boxShadow: showFabMenu 
+              ? '0 0 40px hsl(var(--accent) / 0.6), 0 20px 60px hsl(var(--accent) / 0.4)' 
+              : '0 0 40px hsl(var(--primary) / 0.6), 0 20px 60px hsl(var(--primary) / 0.4)'
+          }}
         >
           <motion.div animate={{ rotate: showFabMenu ? 45 : 0 }} transition={{ duration: 0.2 }}>
-            <Plus className="w-8 h-8" />
+            <Plus className="w-8 h-8 stroke-[3]" />
           </motion.div>
         </motion.button>
       </div>

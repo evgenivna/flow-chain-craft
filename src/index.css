@@ -143,17 +143,28 @@ All colors MUST be HSL.
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
-  /* React Flow node cleanup */
+  /* React Flow node cleanup - force transparent backgrounds */
   .react-flow__node,
   .react-flow__node-default,
   .react-flow__node-input,
   .react-flow__node-output,
   .react-flow__node-prompt,
-  .react-flow__node-end {
+  .react-flow__node-end,
+  .react-flow__node-group {
     background: transparent !important;
+    background-color: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
     padding: 0 !important;
+  }
+  
+  /* Override any xy-flow default background variables */
+  .react-flow__node-input,
+  .react-flow__node-default,
+  .react-flow__node-output,
+  .react-flow__node-group {
+    --xy-node-background-color: transparent !important;
+    --xy-node-background-color-default: transparent !important;
   }
   
   /* Enhanced handles for mobile */

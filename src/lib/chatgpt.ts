@@ -1,9 +1,56 @@
-export const CHATGPT_MODELS = [
+export interface ChatGPTModel {
+  id: string;
+  name: string;
+  maxTokens: number;
+}
+
+// Fallback models if API fetch fails
+export const FALLBACK_MODELS: ChatGPTModel[] = [
   { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', maxTokens: 4096 },
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini', maxTokens: 16384 },
   { id: 'gpt-4o', name: 'GPT-4o', maxTokens: 128000 },
   { id: 'gpt-5', name: 'GPT-5', maxTokens: 200000 },
-] as const;
+];
+
+export const fetchAvailableModels = async (apiKey: string): Promise<ChatGPTModel[]> => {
+  try {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+    
+    if (!response.ok) return FALLBACK_MODELS;
+    
+    const data = await response.json();
+    const chatModels = data.data
+      .filter((model: any) => 
+        model.id.includes('gpt') || 
+        model.id.includes('o1') || 
+        model.id.includes('o3') ||
+        model.id.includes('o4')
+      )
+      .map((model: any) => {
+        // Estimate max tokens based on model name
+        let maxTokens = 4096;
+        if (model.id.includes('gpt-5') || model.id.includes('o3') || model.id.includes('o4')) maxTokens = 200000;
+        else if (model.id.includes('gpt-4o')) maxTokens = 128000;
+        else if (model.id.includes('gpt-4')) maxTokens = 8192;
+        else if (model.id.includes('o1')) maxTokens = 100000;
+        
+        return {
+          id: model.id,
+          name: model.id.toUpperCase().replace(/-/g, ' '),
+          maxTokens,
+        };
+      })
+      .sort((a: ChatGPTModel, b: ChatGPTModel) => b.maxTokens - a.maxTokens);
+    
+    return chatModels.length > 0 ? chatModels : FALLBACK_MODELS;
+  } catch {
+    return FALLBACK_MODELS;
+  }
+};
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';

@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { X } from 'lucide-react';
 import { InputNodeData, PromptNodeData, EndNodeData } from '@/types/flow';
-import { CHATGPT_MODELS } from '@/lib/chatgpt';
+import { FALLBACK_MODELS } from '@/lib/chatgpt';
 
 interface NodeInspectorProps {
   node: Node | null;
@@ -126,7 +126,7 @@ function PromptNodeEditor({ data, onUpdate }: { data: PromptNodeData; onUpdate: 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {CHATGPT_MODELS.map(model => (
+              {FALLBACK_MODELS.map(model => (
                 <SelectItem key={model.id} value={model.id}>
                   {model.name}
                 </SelectItem>

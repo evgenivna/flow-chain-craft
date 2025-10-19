@@ -7,10 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { X, Check, Loader2 } from 'lucide-react';
-import { testConnection } from '@/lib/chatgpt';
+import { testConnection, fetchAvailableModels, FALLBACK_MODELS, ChatGPTModel } from '@/lib/chatgpt';
 import { getSetting, saveSetting, deleteSetting, clearAllData } from '@/lib/storage';
 import { useToast } from '@/hooks/use-toast';
-import { CHATGPT_MODELS } from '@/lib/chatgpt';
 
 interface SettingsProps {
   onClose: () => void;
@@ -22,6 +21,8 @@ export default function Settings({ onClose }: SettingsProps) {
   const [defaultModel, setDefaultModel] = useState('gpt-4o-mini');
   const [defaultTemp, setDefaultTemp] = useState('0.7');
   const [haptics, setHaptics] = useState(true);
+  const [availableModels, setAvailableModels] = useState<ChatGPTModel[]>(FALLBACK_MODELS);
+  const [loadingModels, setLoadingModels] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,14 +52,18 @@ export default function Settings({ onClose }: SettingsProps) {
     }
 
     setIsValidating(true);
+    setLoadingModels(true);
     const isValid = await testConnection(apiKey);
-    setIsValidating(false);
-
+    
     if (isValid) {
+      // Fetch available models
+      const models = await fetchAvailableModels(apiKey);
+      setAvailableModels(models);
+      
       await saveSetting('openai_api_key', apiKey, true);
       toast({
         title: '✅ API Key Valid',
-        description: 'Your key has been saved securely.',
+        description: `Your key has been saved. ${models.length} models available.`,
       });
       setApiKey('sk-****' + apiKey.slice(-4));
     } else {
@@ -68,6 +73,9 @@ export default function Settings({ onClose }: SettingsProps) {
         variant: 'destructive',
       });
     }
+    
+    setIsValidating(false);
+    setLoadingModels(false);
   };
 
   const handleSaveDefaults = async () => {
@@ -174,11 +182,15 @@ export default function Settings({ onClose }: SettingsProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CHATGPT_MODELS.map(model => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
+                    {loadingModels ? (
+                      <SelectItem value="loading" disabled>Loading models...</SelectItem>
+                    ) : (
+                      availableModels.map(model => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
