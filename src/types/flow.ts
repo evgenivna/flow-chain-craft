@@ -15,12 +15,14 @@ export interface PromptNodeData {
   output?: string;
   isRunning?: boolean;
   error?: string;
+  status?: 'idle' | 'running' | 'streaming' | 'done' | 'error';
 }
 
 export interface EndNodeData {
   label: string;
   output?: string;
   displayMode: 'text' | 'markdown' | 'json';
+  status?: 'idle' | 'done';
 }
 
 export type NodeData = InputNodeData | PromptNodeData | EndNodeData;
