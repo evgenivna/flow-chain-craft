@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "Rubik", "DM Sans", "system-ui", "sans-serif"],
+        sans: ['"Wix Madefor Text"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -291,16 +291,16 @@ export default function FlowCanvas() {
         minZoom={0.3}
         maxZoom={1.5}
         fitView
-        className="bg-gradient-to-br from-background via-background to-card"
+        className="bg-background"
       >
         <Background 
           variant={BackgroundVariant.Dots} 
           gap={20} 
           size={1.5}
-          color="hsl(var(--primary) / 0.15)"
+          color="hsl(var(--border))"
         />
         <Controls 
-          className="!bg-card/80 !backdrop-blur-lg !border-border/50 !rounded-2xl"
+          className="!bg-card !border-border !rounded-lg !shadow-sm"
           showInteractive={false}
         />
 
@@ -310,9 +310,9 @@ export default function FlowCanvas() {
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="glass glass-card px-6 py-3 flex items-center gap-4"
+              className="bg-card border border-border rounded-lg px-6 py-3 flex items-center gap-4 shadow-sm"
             >
-              <Zap className="w-5 h-5 text-accent animate-pulse" />
+              <Zap className="w-5 h-5 text-primary animate-pulse" />
               <div className="text-sm font-semibold text-foreground">
                 {tokenCount} tokens • {((Date.now() - startTimeRef.current) / 1000).toFixed(1)}s
               </div>
@@ -326,7 +326,7 @@ export default function FlowCanvas() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowSettings(true)}
-            className="glass glass-card p-3 rounded-2xl hover:ring-2 hover:ring-primary/50 transition-all"
+            className="bg-card border border-border p-3 rounded-lg hover:border-primary hover:shadow-sm transition-all"
           >
             <SettingsIcon className="w-5 h-5 text-foreground" />
           </motion.button>
@@ -343,33 +343,33 @@ export default function FlowCanvas() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ delay: 0.1 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => addNode('input')}
-                className="glass glass-card px-4 py-3 rounded-2xl text-sm font-semibold text-foreground flex items-center gap-2 hover:ring-2 hover:ring-primary/50"
+                className="bg-card border-2 border-border px-4 py-3 rounded-lg text-sm font-semibold text-foreground flex items-center gap-2 hover:border-primary shadow-sm hover:shadow-md transition-all"
               >
-                🟢 Input
+                📥 Input
               </motion.button>
               <motion.button
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ delay: 0.05 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => addNode('prompt')}
-                className="glass glass-card px-4 py-3 rounded-2xl text-sm font-semibold text-foreground flex items-center gap-2 hover:ring-2 hover:ring-primary/50"
+                className="bg-card border-2 border-border px-4 py-3 rounded-lg text-sm font-semibold text-foreground flex items-center gap-2 hover:border-primary shadow-sm hover:shadow-md transition-all"
               >
-                🧠 Prompt
+                🤖 Prompt
               </motion.button>
               <motion.button
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => addNode('end')}
-                className="glass glass-card px-4 py-3 rounded-2xl text-sm font-semibold text-foreground flex items-center gap-2 hover:ring-2 hover:ring-accent/50"
+                className="bg-card border-2 border-border px-4 py-3 rounded-lg text-sm font-semibold text-foreground flex items-center gap-2 hover:border-primary shadow-sm hover:shadow-md transition-all"
               >
                 🏁 End
               </motion.button>
@@ -382,19 +382,10 @@ export default function FlowCanvas() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowFabMenu(!showFabMenu)}
-          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-2xl border-2 ${
-            showFabMenu 
-              ? 'bg-accent text-white ring-4 ring-accent/30 border-accent/50' 
-              : 'bg-gradient-to-br from-primary to-accent text-white border-primary/30'
-          }`}
-          style={{
-            boxShadow: showFabMenu 
-              ? '0 0 40px hsl(var(--accent) / 0.6), 0 20px 60px hsl(var(--accent) / 0.4)' 
-              : '0 0 40px hsl(var(--primary) / 0.6), 0 20px 60px hsl(var(--primary) / 0.4)'
-          }}
+          className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:shadow-xl transition-all"
         >
           <motion.div animate={{ rotate: showFabMenu ? 45 : 0 }} transition={{ duration: 0.2 }}>
-            <Plus className="w-8 h-8 stroke-[3]" />
+            <Plus className="w-7 h-7" />
           </motion.div>
         </motion.button>
       </div>
@@ -405,14 +396,14 @@ export default function FlowCanvas() {
         whileTap={{ scale: 0.95 }}
         onClick={runFlow}
         disabled={isExecuting || nodes.length === 0}
-        className="fixed bottom-6 left-6 w-16 h-16 rounded-full bg-gradient-to-br from-accent to-primary text-white flex items-center justify-center shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed z-40"
+        className="fixed bottom-6 left-6 w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed z-40"
       >
         {isExecuting ? (
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-            <Zap className="w-7 h-7" />
+            <Zap className="w-6 h-6" />
           </motion.div>
         ) : (
-          <Play className="w-7 h-7 ml-1" />
+          <Play className="w-6 h-6 ml-0.5" />
         )}
       </motion.button>
 
@@ -421,7 +412,7 @@ export default function FlowCanvas() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={exportFlow}
-        className="fixed bottom-24 left-6 w-12 h-12 rounded-full glass glass-card text-foreground flex items-center justify-center shadow-lg z-40"
+        className="fixed bottom-24 left-6 w-12 h-12 rounded-full bg-card border border-border text-foreground flex items-center justify-center shadow-sm hover:shadow-md hover:border-primary z-40 transition-all"
       >
         <Download className="w-5 h-5" />
       </motion.button>
